@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 
 import produtoRoutes from './routes/produtoRoutes.js';      // Importa as rotas de produtos do arquivo produtoRoutes.js
 import { sql } from '../config/db.js';                      // Importa a configuração do banco de dados do arquivo db.js
+import { aj } from './lib/arcjet.js';
 
 dotenv.config();                                            // Carrega as variáveis de ambiente do arquivo .env para process.env
                                                             // dotenv é um módulo que carrega variáveis de ambiente de um arquivo .env para process.env, permitindo o uso de variáveis de configuração em seu aplicativo.
@@ -17,6 +18,28 @@ app.use(express.json());                                    // middleware para a
 app.use(cors());                                            // middleware para habilitar CORS (Cross-Origin Resource Sharing), permitindo que o frontend acesse o backend em diferentes domínios.
 app.use(helmet());                                          // helmet é um middleware de segurança que ajuda a proteger o seu app definindo vários cabeçalhos HTTP relacionados à segurança.
 app.use(morgan('dev'));                                     // morgan é um middleware de logging que registra as requisições HTTP no console.
+
+//aplicando o arcjet nas rotas
+app.use(async (req,res, next) => {
+  try {
+    const decisao = await aj.protect(req, {
+      requested: 1,
+    });
+
+    if (decisao.isDenied()) {
+      if (decisao.reason.isRateLimit()) {
+        res.status(429).json({ message: 'Limite de requisições excedido. Tente novamente mais tarde.' });
+      } else if (decisao.reason.isBot()) {
+        res.status(403).json({ message: 'Acesso de bot negado.' });
+      } else {
+        res.status(403).json({ message: 'Acesso negado.' });
+      }
+    }
+    return next();
+  } catch (error) {
+    
+  }
+});
 
 app.use('/api/produtos', produtoRoutes);                                                         // Rota de teste que responde com "Hello World!" quando acessada.
 
@@ -31,7 +54,6 @@ async function startdb() {
       criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     `;
-
 
     console.log('db conectada');
   }catch (error) {
