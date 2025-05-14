@@ -4,11 +4,9 @@ import morgan from 'morgan';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-import quartosRoutes from './routes/quartosRoutes.js';
-import clientesRoutes from './routes/clientesRoutes.js';
-import reservasRoutes from './routes/reservasRoutes.js';
+import produtoRoutes from './routes/produtoRoutes.js';      // Importa as rotas de produtos do arquivo produtoRoutes.js
+import { sql } from '../config/db.js';                      // Importa a configuração do banco de dados do arquivo db.js
 
-import { sql } from './config/db.js';
 
 dotenv.config();                                            // Carrega as variáveis de ambiente do arquivo .env para process.env
                                                             // dotenv é um módulo que carrega variáveis de ambiente de um arquivo .env para process.env, permitindo o uso de variáveis de configuração em seu aplicativo.
@@ -21,45 +19,20 @@ app.use(cors());                                            // middleware para h
 app.use(helmet());                                          // helmet é um middleware de segurança que ajuda a proteger o seu app definindo vários cabeçalhos HTTP relacionados à segurança.
 app.use(morgan('dev'));                                     // morgan é um middleware de logging que registra as requisições HTTP no console.
 
-app.use('/api/quartos', quartosRoutes);
-app.use('/api/clientes', clientesRoutes);
-app.use('/api/reservas', reservasRoutes);
+
+
+app.use('/api/produtos', produtoRoutes);                                                         // Rota de teste que responde com "Hello World!" quando acessada.
 
 async function startdb() {
   try {
-    // Criação da tabela 'clientes'
     await sql`
-      CREATE TABLE IF NOT EXISTS clientes (
-        id SERIAL PRIMARY KEY,
-        nome VARCHAR(255) NOT NULL,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        telefone VARCHAR(255) NOT NULL,
-        senha VARCHAR(255) NOT NULL
-      );
-    `;
-
-    // Criação da tabela 'quartos'
-    await sql`
-      CREATE TABLE IF NOT EXISTS quartos (
-        id SERIAL PRIMARY KEY,
-        imagem_url VARCHAR(255),
-        nome VARCHAR(255) NOT NULL,
-        descricao VARCHAR(255),
-        preco DECIMAL(10,2) NOT NULL,
-        quantidade INTEGER NOT NULL
-      );
-    `;
-
-    // Criação da tabela 'reservas'
-    await sql`
-        CREATE TABLE reservas (
-        id SERIAL PRIMARY KEY,
-        quarto_id INTEGER REFERENCES quartos(id),
-        cliente_id INTEGER REFERENCES clientes(id),
-        hospedes INTEGER NOT NULL,
-        inicio DATE NOT NULL,
-        fim DATE NOT NULL
-    );
+    CREATE TABLE IF NOT EXISTS produtos (
+      id SERIAL PRIMARY KEY,
+      nome VARCHAR(255) NOT NULL,
+      imagem VARCHAR(255) NOT NULL,
+      preco DECIMAL(10, 2) NOT NULL,
+      criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
     `;
 
     console.log('db conectada');
